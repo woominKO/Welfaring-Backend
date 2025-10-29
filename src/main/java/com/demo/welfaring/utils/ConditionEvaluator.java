@@ -27,7 +27,7 @@ public class ConditionEvaluator {
         List<String> requiredDiseases = getStringListValue(criteria, "diseases");
         if (requiredDiseases == null || requiredDiseases.isEmpty()) return true;
         
-        if (userDiseases == null || userDiseases.isEmpty()) return false;
+        if (userDiseases == null || userDiseases.isEmpty()) return true; // null이면 통과
         
         return userDiseases.stream().anyMatch(disease -> requiredDiseases.contains(disease));
     }
@@ -36,7 +36,7 @@ public class ConditionEvaluator {
         List<String> requiredChronicDiseases = getStringListValue(criteria, "chronic_diseases");
         if (requiredChronicDiseases == null || requiredChronicDiseases.isEmpty()) return true;
         
-        if (userChronicDiseases == null || userChronicDiseases.isEmpty()) return false;
+        if (userChronicDiseases == null || userChronicDiseases.isEmpty()) return true; // null이면 통과
         
         return userChronicDiseases.stream().anyMatch(disease -> requiredChronicDiseases.contains(disease));
     }
@@ -45,7 +45,7 @@ public class ConditionEvaluator {
         List<String> allowedTypes = getStringListValue(criteria, "insurance_type");
         if (allowedTypes == null || allowedTypes.isEmpty()) return true;
         
-        if (userInsuranceType == null) return false;
+        if (userInsuranceType == null) return true; // null이면 통과
         
         return allowedTypes.contains(userInsuranceType);
     }
@@ -54,7 +54,7 @@ public class ConditionEvaluator {
         List<Object> allowedGrades = getListValue(criteria, "long_term_care_grade");
         if (allowedGrades == null || allowedGrades.isEmpty()) return true;
         
-        if (userLongTermCareGrade == null) return false;
+        if (userLongTermCareGrade == null) return true; // null이면 통과
         
         return allowedGrades.stream().anyMatch(grade -> {
             if (grade instanceof Integer) {
@@ -70,7 +70,7 @@ public class ConditionEvaluator {
         Integer maxIncome = getIntegerValue(criteria, "income_max");
         if (maxIncome == null) return true;
         
-        if (userIncome == null) return false;
+        if (userIncome == null) return true; // null이면 통과
         
         return userIncome <= maxIncome;
     }
@@ -79,7 +79,7 @@ public class ConditionEvaluator {
         Integer maxPropertyValue = getIntegerValue(criteria, "property_value_max");
         if (maxPropertyValue == null) return true;
         
-        if (userPropertyValue == null) return false;
+        if (userPropertyValue == null) return true; // null이면 통과
         
         return userPropertyValue <= maxPropertyValue;
     }
@@ -88,7 +88,7 @@ public class ConditionEvaluator {
         Integer requiredFamilyMembers = getIntegerValue(criteria, "family_members");
         if (requiredFamilyMembers == null) return true;
         
-        if (userFamilyMembers == null) return false;
+        if (userFamilyMembers == null) return true; // null이면 통과
         
         return userFamilyMembers >= requiredFamilyMembers;
     }
@@ -97,7 +97,7 @@ public class ConditionEvaluator {
         Boolean requiredBasicRecipient = getBooleanValue(criteria, "is_basic_recipient");
         if (requiredBasicRecipient == null) return true;
         
-        if (userIsBasicRecipient == null) return false;
+        if (userIsBasicRecipient == null) return true; // null이면 통과
         
         return userIsBasicRecipient.equals(requiredBasicRecipient);
     }
@@ -106,7 +106,7 @@ public class ConditionEvaluator {
         Boolean requiredLowIncome = getBooleanValue(criteria, "is_low_income");
         if (requiredLowIncome == null) return true;
         
-        if (userIsLowIncome == null) return false;
+        if (userIsLowIncome == null) return true; // null이면 통과
         
         return userIsLowIncome.equals(requiredLowIncome);
     }
@@ -115,7 +115,7 @@ public class ConditionEvaluator {
         Boolean requiredHospitalized = getBooleanValue(criteria, "is_hospitalized");
         if (requiredHospitalized == null) return true;
         
-        if (userIsHospitalized == null) return false;
+        if (userIsHospitalized == null) return true; // null이면 통과
         
         return userIsHospitalized.equals(requiredHospitalized);
     }
@@ -124,7 +124,7 @@ public class ConditionEvaluator {
         List<String> allowedHospitalTypes = getStringListValue(criteria, "hospital_type");
         if (allowedHospitalTypes == null || allowedHospitalTypes.isEmpty()) return true;
         
-        if (userHospitalType == null) return false;
+        if (userHospitalType == null) return true; // null이면 통과
         
         return allowedHospitalTypes.contains(userHospitalType);
     }
@@ -133,7 +133,7 @@ public class ConditionEvaluator {
         Boolean requiredPregnant = getBooleanValue(criteria, "is_pregnant");
         if (requiredPregnant == null) return true;
         
-        if (userIsPregnant == null) return false;
+        if (userIsPregnant == null) return true; // null이면 통과
         
         return userIsPregnant.equals(requiredPregnant);
     }
@@ -142,7 +142,7 @@ public class ConditionEvaluator {
         Boolean requiredDisabled = getBooleanValue(criteria, "is_disabled");
         if (requiredDisabled == null) return true;
         
-        if (userIsDisabled == null) return false;
+        if (userIsDisabled == null) return true; // null이면 통과
         
         return userIsDisabled.equals(requiredDisabled);
     }
@@ -151,7 +151,7 @@ public class ConditionEvaluator {
         List<String> allowedRegions = getStringListValue(criteria, "region");
         if (allowedRegions == null || allowedRegions.isEmpty()) return true;
         
-        if (userRegion == null) return false;
+        if (userRegion == null) return true; // null이면 통과
         
         return allowedRegions.stream().anyMatch(region -> userRegion.contains(region));
     }
@@ -160,7 +160,7 @@ public class ConditionEvaluator {
         List<String> allowedGenders = getStringListValue(criteria, "gender");
         if (allowedGenders == null || allowedGenders.isEmpty()) return true;
         
-        if (userGender == null) return false;
+        if (userGender == null) return true; // null이면 통과
         
         return allowedGenders.contains(userGender);
     }
@@ -169,7 +169,7 @@ public class ConditionEvaluator {
         String requiredDifficulty = getStringValue(criteria, "daily_life_difficulty");
         if (requiredDifficulty == null || requiredDifficulty.isEmpty()) return true;
         
-        if (userDailyLifeDifficulty == null) return false;
+        if (userDailyLifeDifficulty == null) return true; // null이면 통과
         
         return userDailyLifeDifficulty.contains(requiredDifficulty);
     }
