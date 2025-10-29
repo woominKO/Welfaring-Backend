@@ -32,7 +32,7 @@ public class OpenAIService {
 
     public String generateSummary(UserProfile userProfile, List<BenefitDTO> matchedBenefits) {
         try {
-            log.info("AI 요약문 생성 시작: UserProfile ID {}, 혜택 {}개", userProfile.getId(), matchedBenefits.size());
+            log.info("AI 요약문 생성 시작: 혜택 {}개", matchedBenefits.size());
 
             // 1. [System] 메시지 (AI의 역할과 규칙 정의)
             String systemMessage = """
