@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: welfaring-backend
+    env: java
+    buildCommand: ./gradlew build
+    startCommand: java -jar build/libs/welfaring-0.0.1-SNAPSHOT.jar
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false  # 수동으로 설정
+      - key: SPRING_PROFILES_ACTIVE
+        value: production
