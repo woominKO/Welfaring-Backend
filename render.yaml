@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: welfaring-backend
+    env: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false  # 수동으로 설정
+      - key: SPRING_PROFILES_ACTIVE
+        value: docker
