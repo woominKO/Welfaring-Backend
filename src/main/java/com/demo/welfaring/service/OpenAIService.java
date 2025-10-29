@@ -5,6 +5,7 @@ import com.demo.welfaring.dto.BenefitDTO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -28,7 +29,9 @@ public class OpenAIService {
     private final String model;
     
     // ObjectMapper를 final로 선언하고 생성자 주입 또는 빈 등록을 권장하나, 여기서는 원본 코드를 유지합니다.
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     public String generateSummary(UserProfile userProfile, List<BenefitDTO> matchedBenefits) {
         try {
