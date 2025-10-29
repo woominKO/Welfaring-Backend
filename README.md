@@ -76,11 +76,19 @@ Welfaring Backend is running!
 export OPENAI_API_KEY="your-openai-api-key-here"
 ```
 
+<<<<<<< HEAD
 ### 2. Gradle로 실행
+=======
+### 2. 데이터베이스 설정
+PostgreSQL 데이터베이스가 실행 중이어야 합니다.
+
+### 3. 애플리케이션 실행
+>>>>>>> ba47bd149bb4d7995895ed1c285d04317cfcb66b
 ```bash
 ./gradlew bootRun
 ```
 
+<<<<<<< HEAD
 ### 3. Docker로 실행
 ```bash
 # 환경변수 설정
@@ -97,10 +105,13 @@ docker-compose logs -f welfaring-backend
 docker-compose down
 ```
 
+=======
+>>>>>>> ba47bd149bb4d7995895ed1c285d04317cfcb66b
 애플리케이션이 `http://localhost:8080`에서 실행됩니다.
 
 ## 🌐 배포
 
+<<<<<<< HEAD
 ### Docker 배포 (권장)
 
 #### 1. 로컬 Docker 실행
@@ -125,6 +136,11 @@ docker-compose down
 - **Environment Variables**: `OPENAI_API_KEY`
 
 ### Gradle 배포 (기존)
+=======
+이 프로젝트는 Render에서 배포됩니다.
+
+### Render 배포 설정
+>>>>>>> ba47bd149bb4d7995895ed1c285d04317cfcb66b
 - **Build Command**: `./gradlew build`
 - **Start Command**: `java -jar build/libs/welfaring-0.0.1-SNAPSHOT.jar`
 - **Environment Variables**: `OPENAI_API_KEY`
@@ -144,8 +160,12 @@ src/
 │   │   └── utils/               # 유틸리티
 │   └── resources/
 │       ├── application.properties
+<<<<<<< HEAD
 │       ├── application-production.properties
 │       └── application-docker.properties
+=======
+│       └── application-production.properties
+>>>>>>> ba47bd149bb4d7995895ed1c285d04317cfcb66b
 └── test/
 ```
 
