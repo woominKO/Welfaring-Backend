@@ -4,11 +4,15 @@ import com.demo.welfaring.security.CustomOAuth2UserService;
 import com.demo.welfaring.security.JwtAuthenticationFilter;
 import com.demo.welfaring.security.OAuth2AuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -25,6 +29,7 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final ObjectProvider<ClientRegistrationRepository> clientRegistrationRepositoryProvider;
     
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -36,14 +41,19 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**", "/api/match/health", "/login/**", "/oauth2/**").permitAll()
                 .requestMatchers("/api/match/ai").authenticated()
                 .anyRequest().authenticated()
-            )
-            .oauth2Login(oauth2 -> oauth2
+            );
+
+        ClientRegistrationRepository repo = clientRegistrationRepositoryProvider.getIfAvailable();
+        if (hasAnyRegistration(repo)) {
+            http.oauth2Login(oauth2 -> oauth2
                 .userInfoEndpoint(userInfo -> userInfo
                     .userService(customOAuth2UserService)
                 )
                 .successHandler(oAuth2AuthenticationSuccessHandler)
-            )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            );
+        }
+
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         
         return http.build();
     }
@@ -59,6 +69,16 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
+    }
+
+    private boolean hasAnyRegistration(ClientRegistrationRepository repo) {
+        if (repo instanceof InMemoryClientRegistrationRepository inMemory) {
+            for (ClientRegistration ignored : inMemory) {
+                return true;
+            }
+            return false;
+        }
+        return repo != null;
     }
     
 }
