@@ -1,6 +1,5 @@
 package com.demo.welfaring.config;
 
-import com.demo.welfaring.repository.UserRepository;
 import com.demo.welfaring.security.CustomOAuth2UserService;
 import com.demo.welfaring.security.JwtAuthenticationFilter;
 import com.demo.welfaring.security.OAuth2AuthenticationSuccessHandler;
@@ -10,8 +9,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -28,7 +25,6 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final UserRepository userRepository;
     
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -65,9 +61,4 @@ public class SecurityConfig {
         return source;
     }
     
-    @Bean
-    public UserDetailsService userDetailsService() {
-        return username -> userRepository.findByEmail(username)
-                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + username));
-    }
 }
