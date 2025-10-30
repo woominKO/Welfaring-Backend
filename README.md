@@ -1,34 +1,36 @@
 # 🏥 Welfaring Backend
 
-의료혜택을 찾아주는 웹사이트의 백엔드 API 서버입니다.
+의료·복지 혜택을 사용자 조건과 규칙에 따라 매칭하고, 결과를 AI로 한 문장 요약해주는 Spring Boot 백엔드입니다.
 
-## 🚀 기능
+---
 
+## 🚀 주요 기능
 - 사용자 조건 기반 혜택 매칭
-- OpenAI를 활용한 AI 요약문 생성
-- OAuth 2.0 로그인 (Google, Kakao)
-- JWT 토큰 기반 인증
-- PostgreSQL 데이터베이스 연동
-- RESTful API 제공
+- OpenAI를 활용한 AI 요약(실패 시 안전한 대체 요약)
+- PostgreSQL + Spring Data JPA
+- 환경별 설정(docker, production)
+- OAuth 설계 포함(현재 기본 비활성)
 
-## 🛠️ 기술 스택
+---
 
-- **Java 17**
-- **Spring Boot 3.5.7**
-- **Spring Security + OAuth 2.0**
-- **Spring Data JPA**
-- **PostgreSQL**
-- **OpenAI API**
-- **JWT**
-- **Gradle**
-- **Docker**
+## 🔄 전체 흐름
+1) 프론트가 단순 JSON 입력 전송(혼합 키/오타 허용 가능 설계)
+2) 정규화(옵션) → 표준 DTO(`UserProfileDTO`)로 매핑
+3) `MatchingService`가 혜택 전수 조회 → `MatchingRuleEngine`이 조건별 평가
+4) 매칭 결과를 `OpenAIService`가 한 문장으로 요약(키 없거나 실패 시 fallback)
+5) `MatchingResponseDTO`로 반환
 
-## 📋 API 엔드포인트
+---
 
-### POST /api/match/ai
-사용자 정보를 기반으로 매칭된 혜택을 반환합니다.
+## 📦 API
 
-**Request Body:**
+### 1) 헬스 체크
+- GET `/api/match/health`
+- 200 OK + 문자열
+
+### 2) 혜택 매칭(표준 DTO)
+- POST `/api/match/ai`
+- Request (예):
 ```json
 {
   "age": 78,
@@ -36,148 +38,121 @@
   "region": "서울특별시",
   "insuranceType": "의료급여",
   "isBasicRecipient": true,
+  "isLowIncome": false,
+  "longTermCareGrade": 4,
   "diseases": ["치매"],
+  "chronicDiseases": ["치매"],
+  "isDisabled": false,
+  "isPregnant": false,
   "isHospitalized": true,
-  "hospitalType": "요양병원"
+  "hospitalType": "요양병원",
+  "occupation": null,
+  "income": 1200000,
+  "propertyValue": 50000000,
+  "familyMembers": 1,
+  "dailyLifeDifficulty": "6개월 이상 일상생활 수행 어려움"
 }
 ```
-
-**Response:**
+- Response (요약):
 ```json
 {
-  "matchedBenefits": [
-    {
-      "benefitId": 1,
-      "benefitName": "노인장기요양보험",
-      "category": "장기요양",
-      "provider": "국민건강보험공단",
-      "benefitDescription": "65세 이상 또는 치매...",
-      "applicationMethod": "공단에 장기요양인정 신청...",
-      "targetCriteria": {
-        "age_min": 65,
-        "diseases": ["치매"]
-      }
-    }
-  ],
-  "aiSummary": "치매로 요양병원에 입원한 78세 여성은...",
-  "totalCount": 1
+  "matchedBenefits": [ { /* BenefitDTO */ } ],
+  "aiSummary": "...",
+  "totalCount": 8
 }
 ```
 
-### GET /api/match/health
-서버 상태를 확인합니다.
+(옵션) 단순 입력(JSON) → 정규화 → 매칭 엔드포인트(`/api/match/ai/simple`)는 필요 시 추가 가능합니다.
 
-**Response:**
+---
+
+## 🧠 매칭 로직
+- `MatchingService`: 혜택 전수 조회 → 규칙 엔진 평가 → DTO 변환/응답
+- `MatchingRuleEngine`: `EligibilityParser`(jsonb 파싱) + `ConditionEvaluator`(조건별 평가)
+- 주요 조건: 나이, 질병/만성질병, 보험유형, 장기요양등급, 소득/재산, 가족구성원, 기초수급/저소득, 입원/병원유형, 임신/장애, 지역, 성별, 일상생활 어려움
+
+---
+
+## 🤖 OpenAI 요약
+- 입력: 사용자 프로필 + 매칭 혜택 리스트(JSON)
+- 출력: 인과관계를 담은 한국어 한 문장
+- 실패/401/타임아웃: fallback 요약 사용
+- 키 주입: `openai.api.key=${OPENAI_API_KEY}`
+  - 환경변수에는 따옴표/공백 없이 값만 입력
+
+---
+
+## 🗂️ 패키지 구조
 ```
-Welfaring Backend is running!
+src/main/java/com/demo/welfaring/
+├─ controller/   # MatchController 등
+├─ service/      # MatchingService, MatchingRuleEngine, OpenAIService
+├─ repository/   # BenefitRepository
+├─ domain/       # Benefit, UserProfile
+├─ dto/          # UserProfileDTO, BenefitDTO, MatchingResponseDTO
+├─ utils/        # EligibilityParser, ConditionEvaluator
+└─ config/       # OpenAIConfig, SecurityConfig
 ```
 
-## 🚀 로컬 실행
+---
 
-### 1. 환경 설정
+## 🔐 보안/프로필
+- default/docker: `anyRequest().permitAll()` (개발 편의)
+- production: 헬스체크만 허용, 그 외 인증 필요(설계)
+- CORS: 개발 `*` / 운영 화이트리스트 권장
+
+---
+
+## 💾 데이터 모델(요약)
+- `Benefit`(JPA): `benefitName, category, provider, benefitDescription, applicationMethod, lawReference, targetCriteria(jsonb), dataSource(jsonb), lastUpdated`
+- `UserProfileDTO`: `age, gender(M/F), region, insuranceType, isBasicRecipient, isLowIncome, longTermCareGrade, diseases[], chronicDiseases[], isDisabled, isPregnant, isHospitalized, hospitalType, occupation, income, propertyValue, familyMembers, dailyLifeDifficulty`
+
+---
+
+## ⚙️ 환경변수
+- 공통: `OPENAI_API_KEY`(선택), DB 접속정보
+- 운영 권장: `OPENAI_API_KEY` 설정, CORS 도메인 제한
+- 프로필: 기본 `docker`, 운영 `production`
+
+---
+
+## 🧪 로컬 실행
 ```bash
-# OpenAI API Key 설정
-export OPENAI_API_KEY="your-openai-api-key-here"
-```
+# (선택) AI 요약 사용 시
+export OPENAI_API_KEY=sk-xxxx
 
-<<<<<<< HEAD
-### 2. Gradle로 실행
-=======
-### 2. 데이터베이스 설정
-PostgreSQL 데이터베이스가 실행 중이어야 합니다.
-
-### 3. 애플리케이션 실행
->>>>>>> ba47bd149bb4d7995895ed1c285d04317cfcb66b
-```bash
 ./gradlew bootRun
+
+# 헬스
+curl http://localhost:8080/api/match/health
+
+# 매칭 예시
+curl -X POST http://localhost:8080/api/match/ai \
+  -H "Content-Type: application/json" \
+  -d '{
+    "age":72,
+    "gender":"M",
+    "region":"서울특별시 강북구",
+    "insuranceType":"건강보험",
+    "diseases":["치매","고혈압"],
+    "isDisabled":false
+  }'
 ```
 
-<<<<<<< HEAD
-### 3. Docker로 실행
-```bash
-# 환경변수 설정
-cp env.example .env
-# .env 파일에서 OPENAI_API_KEY 수정
+---
 
-# Docker Compose로 실행
-docker-compose up -d
+## 🛠️ 배포(Render)
+- Environment에 `OPENAI_API_KEY`/DB 설정 → Redeploy
+- `render.yaml` 참고
 
-# 로그 확인
-docker-compose logs -f welfaring-backend
+---
 
-# 서비스 중지
-docker-compose down
-```
+## 📌 트러블슈팅
+- OpenAI 401: 키 오타/따옴표/공백 여부 확인, 재배포 필요
+- 로그인 HTML 응답: 인증 필요한 엔드포인트에 토큰 없이 호출(개발 프로필은 permitAll)
 
-=======
->>>>>>> ba47bd149bb4d7995895ed1c285d04317cfcb66b
-애플리케이션이 `http://localhost:8080`에서 실행됩니다.
+---
 
-## 🌐 배포
-
-<<<<<<< HEAD
-### Docker 배포 (권장)
-
-#### 1. 로컬 Docker 실행
-```bash
-# 환경변수 설정
-cp env.example .env
-# .env 파일에서 OPENAI_API_KEY 수정
-
-# Docker Compose로 실행
-docker-compose up -d
-
-# 로그 확인
-docker-compose logs -f welfaring-backend
-
-# 서비스 중지
-docker-compose down
-```
-
-#### 2. Render Docker 배포
-- **Environment**: `docker`
-- **Dockerfile**: `./Dockerfile`
-- **Environment Variables**: `OPENAI_API_KEY`
-
-### Gradle 배포 (기존)
-=======
-이 프로젝트는 Render에서 배포됩니다.
-
-### Render 배포 설정
->>>>>>> ba47bd149bb4d7995895ed1c285d04317cfcb66b
-- **Build Command**: `./gradlew build`
-- **Start Command**: `java -jar build/libs/welfaring-0.0.1-SNAPSHOT.jar`
-- **Environment Variables**: `OPENAI_API_KEY`
-
-## 📁 프로젝트 구조
-
-```
-src/
-├── main/
-│   ├── java/com/demo/welfaring/
-│   │   ├── controller/          # API 컨트롤러
-│   │   ├── service/             # 비즈니스 로직
-│   │   ├── repository/          # 데이터 접근
-│   │   ├── domain/              # 엔티티
-│   │   ├── dto/                 # 데이터 전송 객체
-│   │   ├── config/              # 설정
-│   │   └── utils/               # 유틸리티
-│   └── resources/
-│       ├── application.properties
-<<<<<<< HEAD
-│       ├── application-production.properties
-│       └── application-docker.properties
-=======
-│       └── application-production.properties
->>>>>>> ba47bd149bb4d7995895ed1c285d04317cfcb66b
-└── test/
-```
-
-## 👥 팀원
-
-- **혜빈**: Controller, OpenAI Service, DTO
-- **우민**: Service, Repository, Domain, Utils
-
-## 📄 라이선스
-
-이 프로젝트는 MIT 라이선스 하에 있습니다.
+## 👥 담당
+- 매칭/도메인/유틸: 우민
+- 컨트롤러/AI 연동/DTO: 혜빈
