@@ -16,8 +16,8 @@ public class OAuth2OptionalConfig {
     @Bean
     @ConditionalOnMissingBean(ClientRegistrationRepository.class)
     public ClientRegistrationRepository clientRegistrationRepository() {
-        // 빈 레지스트리를 제공해 OAuth 환경변수가 비어있을 때도 부팅되도록 함
-        return new InMemoryClientRegistrationRepository(Collections.emptyList());
+        // InMemoryClientRegistrationRepository는 empty 금지. Noop 구현으로 대체.
+        return new NoopClientRegistrationRepository();
     }
 
     @Bean
