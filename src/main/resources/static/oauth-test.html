@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OAuth 로그인 테스트</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .login-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        .login-btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            transition: background-color 0.3s;
+        }
+        .google-btn {
+            background-color: #4285f4;
+            color: white;
+        }
+        .google-btn:hover {
+            background-color: #357ae8;
+        }
+        .kakao-btn {
+            background-color: #fee500;
+            color: #000;
+        }
+        .kakao-btn:hover {
+            background-color: #fdd835;
+        }
+        .api-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        .api-section h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .token-display {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            word-break: break-all;
+            margin: 10px 0;
+        }
+        .api-test {
+            margin: 15px 0;
+        }
+        .api-test button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: 1px solid #007bff;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .api-test button:hover {
+            background-color: #0056b3;
+        }
+        .response {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 OAuth 로그인 테스트</h1>
+        
+        <div class="login-buttons">
+            <a href="/api/oauth2/authorization/google" class="login-btn google-btn">
+                Google 로그인
+            </a>
+            <a href="/api/oauth2/authorization/kakao" class="login-btn kakao-btn">
+                Kakao 로그인
+            </a>
+        </div>
+        
+        <div class="api-section">
+            <h3>📋 API 테스트</h3>
+            <p>로그인 후 아래 버튼들을 클릭하여 API를 테스트할 수 있습니다.</p>
+            
+            <div class="api-test">
+                <button onclick="testHealthCheck()">헬스체크</button>
+                <button onclick="testGetCurrentUser()">현재 사용자 정보</button>
+                <button onclick="testMatchAPI()">혜택 매칭 API</button>
+                <button onclick="testRefreshToken()">토큰 갱신</button>
+                <button onclick="testLogout()">로그아웃</button>
+            </div>
+            
+            <div id="response" class="response" style="display: none;"></div>
+        </div>
+        
+        <div class="api-section">
+            <h3>🔑 토큰 정보</h3>
+            <div id="tokenInfo">
+                <p>로그인 후 토큰 정보가 여기에 표시됩니다.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let accessToken = null;
+        let refreshToken = null;
+        
+        // 페이지 로드 시 URL에서 토큰 정보 확인
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('access_token')) {
+                accessToken = urlParams.get('access_token');
+                refreshToken = urlParams.get('refresh_token');
+                updateTokenInfo();
+            }
+        };
+        
+        function updateTokenInfo() {
+            const tokenInfo = document.getElementById('tokenInfo');
+            if (accessToken) {
+                tokenInfo.innerHTML = `
+                    <h4>Access Token:</h4>
+                    <div class="token-display">${accessToken}</div>
+                    <h4>Refresh Token:</h4>
+                    <div class="token-display">${refreshToken}</div>
+                `;
+            }
+        }
+        
+        function showResponse(data) {
+            const responseDiv = document.getElementById('response');
+            responseDiv.style.display = 'block';
+            responseDiv.textContent = JSON.stringify(data, null, 2);
+        }
+        
+        async function testHealthCheck() {
+            try {
+                const response = await fetch('/api/match/health');
+                const data = await response.text();
+                showResponse({ status: response.status, data: data });
+            } catch (error) {
+                showResponse({ error: error.message });
+            }
+        }
+        
+        async function testGetCurrentUser() {
+            if (!accessToken) {
+                showResponse({ error: '로그인이 필요합니다.' });
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+                const data = await response.json();
+                showResponse({ status: response.status, data: data });
+            } catch (error) {
+                showResponse({ error: error.message });
+            }
+        }
+        
+        async function testMatchAPI() {
+            if (!accessToken) {
+                showResponse({ error: '로그인이 필요합니다.' });
+                return;
+            }
+            
+            const testData = {
+                age: 78,
+                gender: "F",
+                region: "서울특별시",
+                insuranceType: "의료급여",
+                isBasicRecipient: true,
+                diseases: ["치매"],
+                isHospitalized: true,
+                hospitalType: "요양병원"
+            };
+            
+            try {
+                const response = await fetch('/api/match/ai', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`
+                    },
+                    body: JSON.stringify(testData)
+                });
+                const data = await response.json();
+                showResponse({ status: response.status, data: data });
+            } catch (error) {
+                showResponse({ error: error.message });
+            }
+        }
+        
+        async function testRefreshToken() {
+            if (!refreshToken) {
+                showResponse({ error: '리프레시 토큰이 없습니다.' });
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/auth/refresh', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ refreshToken: refreshToken })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    accessToken = data.accessToken;
+                    refreshToken = data.refreshToken;
+                    updateTokenInfo();
+                }
+                
+                showResponse({ status: response.status, data: data });
+            } catch (error) {
+                showResponse({ error: error.message });
+            }
+        }
+        
+        async function testLogout() {
+            if (!accessToken) {
+                showResponse({ error: '로그인이 필요합니다.' });
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    accessToken = null;
+                    refreshToken = null;
+                    updateTokenInfo();
+                    showResponse({ message: '로그아웃 성공' });
+                } else {
+                    showResponse({ error: '로그아웃 실패' });
+                }
+            } catch (error) {
+                showResponse({ error: error.message });
+            }
+        }
+    </script>
+</body>
+</html>

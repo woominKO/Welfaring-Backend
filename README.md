@@ -6,6 +6,8 @@
 
 - 사용자 조건 기반 혜택 매칭
 - OpenAI를 활용한 AI 요약문 생성
+- OAuth 2.0 로그인 (Google, Kakao)
+- JWT 토큰 기반 인증
 - PostgreSQL 데이터베이스 연동
 - RESTful API 제공
 
@@ -13,9 +15,11 @@
 
 - **Java 17**
 - **Spring Boot 3.5.7**
+- **Spring Security + OAuth 2.0**
 - **Spring Data JPA**
 - **PostgreSQL**
 - **OpenAI API**
+- **JWT**
 - **Gradle**
 - **Docker**
 

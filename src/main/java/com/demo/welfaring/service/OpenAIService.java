@@ -145,6 +145,12 @@ public class OpenAIService {
             // 3. OpenAI API 호출
             String response = callOpenAI(systemMessage, userMessage);
             
+            // API 호출 실패 또는 비어있는 응답일 경우 대체 요약 사용
+            if (response == null || response.isBlank()) {
+                log.warn("AI 응답이 비어있거나 null 입니다. 대체 요약을 사용합니다.");
+                return generateFallbackSummary(userProfile, matchedBenefits);
+            }
+            
             log.info("AI 요약문 생성 완료");
             return response;
 
@@ -202,6 +208,11 @@ public class OpenAIService {
             return jsonNode.get("choices").get(0).get("message").get("content").asText();
 
         } catch (WebClientResponseException e) {
+            // 401 등 인증 실패 시에는 예외 전파 대신 null 반환하여 상위에서 대체 요약 처리
+            if (e.getStatusCode() != null && e.getStatusCode().value() == 401) {
+                log.warn("OpenAI API 인증 실패(401). 환경변수 OPENAI_API_KEY를 확인하세요. 응답: {}", e.getResponseBodyAsString());
+                return null;
+            }
             log.error("OpenAI API 호출 실패: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
             throw new RuntimeException("OpenAI API 호출 실패: " + e.getMessage());
         } catch (Exception e) {
