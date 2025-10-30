@@ -9,6 +9,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/match")
@@ -17,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class MatchController {
     
     private final MatchingService matchingService;
+    private static final Logger logger = LoggerFactory.getLogger(MatchController.class);
     private final OpenAIService openAIService;
     
     @PostMapping("/ai")
